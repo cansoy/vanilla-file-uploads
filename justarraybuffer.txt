@@ -1,0 +1,112 @@
+To send files in ArrayBuffer format to a server, you can use the FileReader API to read the file as an ArrayBuffer on the client side, and then use the fetch API to send the ArrayBuffer to the server. On the server side, you can use express to handle the incoming binary data.
+
+Step 1: Client-Side Code
+Here's the client-side code to read a file as an ArrayBuffer and send it to the server:
+
+html
+Kodu kopyala
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload ArrayBuffer</title>
+</head>
+<body>
+    <input type="file" id="fileInput">
+    <button id="uploadButton">Upload</button>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    sendToServer(arrayBuffer, file.name);
+                };
+
+                reader.readAsArrayBuffer(file);  // Read file as ArrayBuffer
+            } else {
+                alert('Please select a file.');
+            }
+        });
+
+        function sendToServer(arrayBuffer, fileName) {
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'File-Name': fileName
+                },
+                body: arrayBuffer
+            })
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
+Step 2: Server-Side Code
+On the server side, use Node.js with express to handle the incoming binary data. First, install express if you haven't already:
+
+bash
+Kodu kopyala
+npm install express
+Create a server file (server.js) and set up the server to handle the incoming binary data:
+
+javascript
+Kodu kopyala
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const app = express();
+const port = 3000;
+
+// Middleware to parse raw binary data
+app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
+
+app.post('/upload', (req, res) => {
+    const arrayBuffer = req.body;
+    const fileName = req.headers['file-name'];  // Retrieve file name from custom header
+
+    // Process the array buffer (save to a file, process, etc.)
+    console.log('Received file:', fileName);
+
+    // Save the file (optional)
+    const filePath = path.join(__dirname, fileName);
+    fs.writeFile(filePath, arrayBuffer, (err) => {
+        if (err) {
+            console.error('Error saving file:', err);
+            res.status(500).send('Error saving file');
+            return;
+        }
+        res.send('File received and saved successfully');
+    });
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
+Step 3: Running the Server
+Start the server by running the following command in your terminal:
+
+bash
+Kodu kopyala
+node server.js
+Step 4: Testing the Upload
+Open the HTML file in your browser, select a file, and click the "Upload" button. The server should log the received file name and save the file to the server.
+
+Summary
+Client-side: Use the FileReader API to read the file as an ArrayBuffer, then send it to the server using the fetch API with the application/octet-stream content type.
+Server-side: Use express to handle the incoming binary data, process the ArrayBuffer, and optionally save the file to the server.
+This approach provides a complete solution for reading a file as an ArrayBuffer in the browser and sending it to a Node.js server.
+
+
+
+
+
+
