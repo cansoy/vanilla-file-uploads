@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Upload</title>
+</head>
+<body>
+    <input type="file" id="fileInput">
+    <input type="text" id="textInput" placeholder="Enter some text">
+    <button id="uploadButton">Upload</button>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            const textInput = document.getElementById('textInput').value;
+
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const base64String = e.target.result.split(',')[1];  // Get the base64 part of the data URL
+                    sendToServer(base64String, textInput, file.name);
+                };
+
+                reader.readAsDataURL(file);  // Read file as Data URL
+            } else {
+                alert('Please select a file.');
+            }
+        });
+
+        function sendToServer(base64String, text, fileName) {
+            const payload = {
+                fileName: fileName,
+                fileData: base64String,
+                text: text
+            };
+
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
